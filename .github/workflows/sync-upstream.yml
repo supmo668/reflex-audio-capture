@@ -1,0 +1,67 @@
+# Sync fork with upstream repository
+# This workflow keeps your fork updated with the original masenf/reflex-audio-capture
+name: Sync Fork with Upstream
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/masenf/reflex-audio-capture.git || true
+          git fetch upstream
+
+      - name: Sync with upstream
+        run: |
+          # Get the default branch name
+          DEFAULT_BRANCH=$(git remote show upstream | grep 'HEAD branch' | cut -d' ' -f5)
+          
+          # Check if we're behind upstream
+          BEHIND=$(git rev-list --count HEAD..upstream/$DEFAULT_BRANCH)
+          
+          if [ "$BEHIND" -gt 0 ]; then
+            echo "Fork is $BEHIND commits behind upstream. Syncing..."
+            
+            # Try to merge upstream changes
+            if git merge upstream/$DEFAULT_BRANCH --no-edit; then
+              echo "Successfully merged upstream changes"
+              git push origin $DEFAULT_BRANCH
+            else
+              echo "Merge conflicts detected. Creating a sync branch for manual resolution."
+              git merge --abort
+              git checkout -b sync-upstream-$(date +%Y%m%d)
+              git merge upstream/$DEFAULT_BRANCH --no-edit || true
+              git push origin sync-upstream-$(date +%Y%m%d)
+              echo "::warning::Merge conflicts detected. Please resolve manually in the sync-upstream branch."
+            fi
+          else
+            echo "Fork is up to date with upstream."
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Upstream: masenf/reflex-audio-capture" >> $GITHUB_STEP_SUMMARY
+          echo "- Fork: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: $(git log --oneline -1)" >> $GITHUB_STEP_SUMMARY
