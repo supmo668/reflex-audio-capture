@@ -104,6 +104,54 @@ useEffect(updateMediaDevices, [])
 """
 
 
+SPACE_HOTKEY_JS_TEMPLATE = """
+// Hold-to-talk: Space key toggles recording, suppressed when an editable
+// text field has focus so users can still type a literal space.
+useEffect(() => {
+  const isEditableTarget = () => {
+    const el = document.activeElement
+    if (!el) return false
+    const tag = (el.tagName || "").toLowerCase()
+    if (tag === "input" || tag === "textarea") return true
+    if (el.isContentEditable) return true
+    if (el.getAttribute && el.getAttribute("contenteditable") === "true") return true
+    return false
+  }
+  const isSpaceKey = (e) => e.code === "Space" || e.key === " "
+  let _ptt_active_{{ ref }} = false
+  const onKeyDown_{{ ref }} = (e) => {
+    if (!isSpaceKey(e)) return
+    if (isEditableTarget()) return
+    if (e.repeat) { e.preventDefault(); return }
+    if (_ptt_active_{{ ref }}) { e.preventDefault(); return }
+    _ptt_active_{{ ref }} = true
+    e.preventDefault()
+    const startFn = refs['mediarecorder_start_{{ ref }}']
+    if (startFn) { startFn() }
+  }
+  const onKeyUp_{{ ref }} = (e) => {
+    if (!isSpaceKey(e)) return
+    if (!_ptt_active_{{ ref }}) return
+    _ptt_active_{{ ref }} = false
+    e.preventDefault()
+    const mediaRecorderRef = refs['mediarecorder_{{ ref }}']
+    if (mediaRecorderRef) {
+      mediaRecorderRef.stop()
+      if (mediaRecorderRef.stream && mediaRecorderRef.stream.getAudioTracks) {
+        mediaRecorderRef.stream.getAudioTracks().forEach(track => track.stop())
+      }
+    }
+  }
+  window.addEventListener('keydown', onKeyDown_{{ ref }})
+  window.addEventListener('keyup', onKeyUp_{{ ref }})
+  return () => {
+    window.removeEventListener('keydown', onKeyDown_{{ ref }})
+    window.removeEventListener('keyup', onKeyUp_{{ ref }})
+  }
+}, [])
+"""
+
+
 def get_codec(data_uri) -> str:
     if not data_uri.startswith("data:"):
         return ""
@@ -170,6 +218,11 @@ class AudioRecorderPolyfill(rx.Component):
     timeslice: rx.Var[int]
     device_id: rx.Var[str]
     use_mp3: rx.Var[bool] = rx.Var.create(True)
+    # When True, install a window-level Space-key push-to-talk listener:
+    #   keydown[Space] -> start(), keyup[Space] -> stop().
+    # Suppressed while an editable text field has focus so the user can still
+    # type a literal space. Default False = byte-for-byte backward compatible.
+    space_to_record: bool = False
 
     @classmethod
     def create(cls, *children, **props) -> AudioRecorderPolyfill:
@@ -223,7 +276,7 @@ class AudioRecorderPolyfill(rx.Component):
             on_error = "console.log(_error)"
         on_error_callback = f"mediaRecorderRef.addEventListener('error', {on_error!s})"
 
-        return [
+        hooks: list[str | rx.Var] = [
             Environment()
             .from_string(START_RECORDING_JS_TEMPLATE)
             .render(
@@ -240,6 +293,18 @@ class AudioRecorderPolyfill(rx.Component):
                 use_mp3=str(self.use_mp3),
             )
         ]
+
+        # Phase 2 (PRD-35): hold-to-talk Space hotkey.
+        # Resolved at component-create time (Python-side bool), so disabled
+        # consumers emit zero extra JS — fully backward compatible.
+        if self.space_to_record:
+            hooks.append(
+                Environment()
+                .from_string(SPACE_HOTKEY_JS_TEMPLATE)
+                .render(ref=self.get_ref())
+            )
+
+        return hooks
 
     def start(self):
         return rx.call_script(f"refs['mediarecorder_start_{self.get_ref()}']()")
