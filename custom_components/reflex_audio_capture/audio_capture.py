@@ -26,8 +26,8 @@ const [mediaDevices, setMediaDevices] = useState([])
 refs['mediadevices_{{ ref }}'] = mediaDevices
 const updateMediaDevices = () => {
   if (!navigator.mediaDevices?.enumerateDevices) {
-    const _error = "enumerateDevices() not supported on your browser!"
-    {{ on_error }}
+    const _error = "enumerateDevices() not supported on your browser!";
+    {{ on_error }};
   } else {
     navigator.mediaDevices
       .enumerateDevices()
@@ -91,12 +91,12 @@ refs['mediarecorder_start_{{ ref }}'] = useCallback(() => {
         })
         // Error callback
         .catch((err) => {
-            const _error = "The following getUserMedia error occurred: " + err
-            {{ on_error }}
+            const _error = "The following getUserMedia error occurred: " + err;
+            {{ on_error }};
         });
     } else {
-        const _error = "getUserMedia not supported on your browser!"
-        {{ on_error }}
+        const _error = "getUserMedia not supported on your browser!";
+        {{ on_error }};
     }
 })
 // Enumerate devices and set the state
