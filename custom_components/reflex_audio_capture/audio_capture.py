@@ -26,7 +26,7 @@ const [mediaDevices, setMediaDevices] = useState([])
 refs['mediadevices_{{ ref }}'] = mediaDevices
 const updateMediaDevices = () => {
   if (!navigator.mediaDevices?.enumerateDevices) {
-    const _error = "enumerateDevices() not supported on your browser!"
+    const _error = "enumerateDevices() not supported on your browser!";
     {{ on_error }}
   } else {
     navigator.mediaDevices
