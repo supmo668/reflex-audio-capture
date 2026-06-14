@@ -65,7 +65,18 @@ refs['mediarecorder_start_{{ ref }}'] = useCallback(() => {
             const updateState = () => {
                 setMediaRecorderState(mediaRecorderRef.state)
             }
-            mediaRecorderRef.addEventListener('stop', updateState)
+            mediaRecorderRef.addEventListener('stop', () => {
+                updateState()
+                // Release the mic on EVERY stop path. MediaRecorder.stop()
+                // does NOT stop the underlying MediaStream tracks, so the
+                // browser mic indicator stays lit (and the device stays
+                // captured) until the tracks are explicitly stopped. Doing
+                // it here centralizes release for the Stop button, the
+                // auto-release watchdog, Space-keyup, and beforeunload.
+                if (mediaRecorderRef.stream && mediaRecorderRef.stream.getTracks) {
+                    mediaRecorderRef.stream.getTracks().forEach(track => track.stop())
+                }
+            })
             mediaRecorderRef.addEventListener('start', updateState)
             mediaRecorderRef.addEventListener('pause', updateState)
             mediaRecorderRef.addEventListener('resume', updateState)
