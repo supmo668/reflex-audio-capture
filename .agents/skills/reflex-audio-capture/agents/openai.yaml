@@ -1,0 +1,6 @@
+interface:
+  display_name: "Reflex Audio Capture"
+  short_description: "Repo-specific patterns and workflows for reflex-audio-capture"
+  default_prompt: "Use the reflex-audio-capture repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
