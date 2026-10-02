@@ -220,7 +220,7 @@ class AudioRecorderPolyfill(rx.Component):
     ```
     """
 
-    lib_dependencies: List[str] = ["audio-recorder-polyfill"]
+    lib_dependencies: List[str] = ["audio-recorder-polyfill@0.4.1"]
 
     on_data_available: rx.EventHandler[_on_data_available_signature]
     on_start: rx.EventHandler[rx.event.no_args_event_spec]
