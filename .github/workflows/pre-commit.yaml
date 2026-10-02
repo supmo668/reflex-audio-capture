@@ -15,6 +15,6 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: "3.12"
-      - run: pip install pre-commit pyright .
+      - run: pip install pre-commit pyright pytest .  # pytest: tests/ import it; pyright resolves it
       - run: find . -name requirements.txt | sed -e 's/^/-r/' | xargs pip install
       - run: pre-commit run --all-files
