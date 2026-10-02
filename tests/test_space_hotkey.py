@@ -22,9 +22,7 @@ existing consumers stay byte-for-byte backward compatible.
 from __future__ import annotations
 
 import pytest
-
 from reflex_audio_capture import AudioRecorderPolyfill
-
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
@@ -85,9 +83,7 @@ def test_explicit_false_emits_no_global_keyboard_listener() -> None:
 def test_space_to_record_enables_global_keydown_keyup_listeners() -> None:
     """With `space_to_record=True`, both keydown AND keyup listeners are on window."""
 
-    component = AudioRecorderPolyfill.create(
-        id="ptt_recorder", space_to_record=True
-    )
+    component = AudioRecorderPolyfill.create(id="ptt_recorder", space_to_record=True)
     src = _hooks_source(component)
 
     # Listeners are registered on window (or globally with `addEventListener`,
@@ -97,9 +93,9 @@ def test_space_to_record_enables_global_keydown_keyup_listeners() -> None:
 
     # Must reference the Space key — either KeyboardEvent.code === 'Space'
     # or KeyboardEvent.key === ' '.
-    assert (
-        "'Space'" in src or '"Space"' in src or 'e.code' in src
-    ), "no reference to the Space key in the hotkey hook"
+    assert "'Space'" in src or '"Space"' in src or "e.code" in src, (
+        "no reference to the Space key in the hotkey hook"
+    )
 
 
 @pytest.mark.unit
