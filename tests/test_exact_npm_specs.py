@@ -20,4 +20,6 @@ def test_lib_dependencies_are_exact() -> None:
             specs += re.findall(r'"([^"]+)"', m.group(1))
     assert specs, "scan found no lib_dependencies (guard against a silent no-op)"
     for spec in specs:
-        assert re.match(r"^(@[^/]+/)?[^@]+@\d+\.\d+\.\d+$", spec), f"{spec!r} is not name@X.Y.Z"
+        assert re.match(r"^(@[^/]+/)?[^@]+@\d+\.\d+\.\d+$", spec), (
+            f"{spec!r} is not name@X.Y.Z"
+        )
